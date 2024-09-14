@@ -1426,8 +1426,7 @@ class GenotypesPLINK(GenotypesVCF):
         if self.num_cpus == 1:
             self._init_mp(sample_idxs, indices)
             for start in range(0, mat_len[1], chunks):
-                self._read_chunk(start, start + chunks)
-            self._read_chunk(start + chunks, mat_len[1])
+                self._read_chunk(start, min(start + chunks, mat_len[1]))
             return
         # otherwise, let's parallelize!
         # adjust chunk size to maximize CPU usage
