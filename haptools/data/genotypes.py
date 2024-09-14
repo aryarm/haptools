@@ -163,12 +163,22 @@ class Genotypes(Data):
         records = self.__iter__(region=region, samples=samples, variants=variants)
         if variants is not None:
             max_variants = len(variants)
+        if max_variants is None:
+            # try to get a count of the variants using cyvcf2
+            try:
+                try:
+                    max_variants = VCF(str(self.fname), lazy=True).num_records
+                except ValueError:
+                    msg = " and the VCF is not indexed"
+            except AttributeError as err:
+                msg = " and cyvcf2 < v0.30.27 is installed"
+            self.log.warning(
+                f"The max_variants parameter was not specified{msg}. We have no choice"
+                " but to append to an ever-growing array, which can lead to memory "
+                "overuse!"
+            )
         # check whether we can preallocate memory instead of making copies
         if max_variants is None:
-            self.log.warning(
-                "The max_variants parameter was not specified. We have no choice but to"
-                " append to an ever-growing array, which can lead to memory overuse!"
-            )
             variants_arr = []
             data_arr = []
             for rec in records:
