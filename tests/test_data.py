@@ -436,6 +436,20 @@ class TestGenotypesPLINK:
             for col in ("chrom", "pos", "id", "alleles"):
                 assert gts.variants[col][i] == expected.variants[col][i]
 
+    def test_load_genotypes_chunked_cpus(self):
+        gts = GenotypesPLINK(DATADIR / "example.pgen", num_cpus=1)
+        gts.read()
+        # TODO: test with missing values
+        # and with different combinations of num_cpus and chunk_size
+        breakpoint()
+
+        # check that everything matches what we expected
+        np.testing.assert_allclose(gts.data, expected.data)
+        assert gts.samples == expected.samples
+        for i, x in enumerate(expected.variants):
+            for col in ("chrom", "pos", "id", "alleles"):
+                assert gts.variants[col][i] == expected.variants[col][i]
+
     def test_load_genotypes_prephased(self):
         expected = self._get_fake_genotypes_plink()
 
