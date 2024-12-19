@@ -371,3 +371,42 @@ def test_ancestry_from_bp(capfd):
     captured = capfd.readouterr()
     assert captured.out == ancestry_results
     assert result.exit_code == 0
+
+
+def test_transform_empty_hap(capfd):
+    gt_file = DATADIR / "simple.vcf.gz"
+    hp_file = Path("empty.hap")
+    hp_file_gz = Path("empty.hap.gz")
+    hp_file_idx = Path("empty.hap.gz.tbi")
+
+    # create an empty .hap file
+    with open(hp_file, "w") as f:
+        f.write("")
+
+    # can we run transform with the empty hap file?
+    cmd = f"transform --region 1:10116-10122 {gt_file} {hp_file}"
+    runner = CliRunner()
+    result = runner.invoke(main, cmd.split(" "))
+    captured = capfd.readouterr()
+    assert all(line for line in captured.out.split("\n") if line.startswith("#"))
+    assert result.exit_code != 0
+
+    # now, index the empty hap file and try again
+    cmd = f"index {hp_file}"
+    runner = CliRunner()
+    result = runner.invoke(main, cmd.split(" "), catch_exceptions=False)
+    captured = capfd.readouterr()
+    assert result.exit_code == 0
+    assert hp_file_gz.exists()
+    assert hp_file_idx.exists()
+
+    # what about now? does it still fail?
+    cmd = f"transform --region 1:10116-10122 {gt_file} {hp_file_gz}"
+    runner = CliRunner()
+    result = runner.invoke(main, cmd.split(" "))
+    captured = capfd.readouterr()
+    assert result.exit_code != 0
+
+    hp_file.unlink()
+    hp_file_gz.unlink()
+    hp_file_idx.unlink()

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.5.0](https://github.com/CAST-genomics/haptools/compare/v0.4.2...v0.5.0) (2024-12-11)
+
+
+### Features
+
+* a new `Haplotypes.merge()` method ([#256](https://github.com/CAST-genomics/haptools/issues/256)) ([cf4ccb2](https://github.com/CAST-genomics/haptools/commit/cf4ccb2822d6b1fd42ca1208ad8c78a32fa107e1))
+* allow for specifying the order of population labels in `Breakpoints.encode()` ([#262](https://github.com/CAST-genomics/haptools/issues/262)) ([09a916a](https://github.com/CAST-genomics/haptools/commit/09a916a3bf4c7e3494507af1d13673e2b78c8ff3))
+* allow multiple variants in `pearson_corr_ld()` ([#258](https://github.com/CAST-genomics/haptools/issues/258)) ([808c31e](https://github.com/CAST-genomics/haptools/commit/808c31ed12268089ee960c0f04d5cd1c916d718c))
+* support for Apple M1 silicon ([#255](https://github.com/CAST-genomics/haptools/issues/255)) ([3f055ac](https://github.com/CAST-genomics/haptools/commit/3f055acdb6f4effc58fde6dcff993654dbf73985))
+* support for numpy 2.0 ([#250](https://github.com/CAST-genomics/haptools/issues/250)) ([69192d0](https://github.com/CAST-genomics/haptools/commit/69192d0a5fc7dcd5ca15260b4505306ff742bf1b))
+
+
+### Bug Fixes
+
+* 1) improve error in `transform` when providing an empty hap file and a `--region` and 2) allow for calling `write()` on Genotypes objects without variants ([#264](https://github.com/CAST-genomics/haptools/issues/264)) ([4e84178](https://github.com/CAST-genomics/haptools/commit/4e8417899d01b2e14bcb4c96971337817637caa0))
+* allow `simphenotype` to accept TR PGENs without `--repeats` ([#263](https://github.com/CAST-genomics/haptools/issues/263)) ([16a84d1](https://github.com/CAST-genomics/haptools/commit/16a84d1fb5e1dee335b13fa0628e9abf4e53453a))
+* issue warnings instead of errors when trying to check the header of hap files and issue error when output of transform is not provided to simphenotype ([#254](https://github.com/CAST-genomics/haptools/issues/254)) ([0226653](https://github.com/CAST-genomics/haptools/commit/02266539cb5d242497658e9fffec3aa7139fe8ee))
+* load an empty array if there are no variants in `GenotypesVCF.read` ([#257](https://github.com/CAST-genomics/haptools/issues/257)) ([9eedc3a](https://github.com/CAST-genomics/haptools/commit/9eedc3afca202c0dd83bcce9cef34f339df83118))
+
+
+### Documentation
+
+* creating an `.hanc` file from a `.bp` file ([#260](https://github.com/CAST-genomics/haptools/issues/260)) ([b6dcd0c](https://github.com/CAST-genomics/haptools/commit/b6dcd0c44a524e2bdae2bad8f6e31fe25dee752e))
+
 ## [0.4.2](https://github.com/CAST-genomics/haptools/compare/v0.4.1...v0.4.2) (2024-06-14)
 
 

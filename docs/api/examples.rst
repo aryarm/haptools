@@ -108,3 +108,48 @@ You can use the :ref:`data API <api-data>` and the :ref:`simphenotype API <api-h
         hp.data[ID].variants = (data.Variant(start=pos, end=end, id=ID, allele=allele),)
 
     hp.write()
+
+.. _api-examples-bp2anc:
+
+Converting a ``.bp`` file into a ``.hanc`` per-site ancestry file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You can obtain the ancestry of a list of variants directly from a ``.bp`` file using the :ref:`data API <api-data-bp2anc>`.
+
+**Input:**
+
+* Breakpoints in a :ref:`.bp file <formats-breakpoints>`
+* A list of variants in a :ref:`PLINK2 PVAR file <formats-genotypesplink>`
+
+**Output:**
+
+* An ``.hanc`` per-site ancestry file as described in `the admix-simu documentation <https://github.com/williamslab/admix-simu/tree/master?tab=readme-ov-file#per-site-ancestry-values>`_:
+
+.. include:: ../../tests/data/simple.hanc
+  :literal:
+
+.. code-block:: python
+
+    import numpy as np
+    from pathlib import Path
+    from haptools import data
+
+    output = Path("output.hanc")
+
+    # load breakpoints from the bp file and encode each population label as an int
+    breakpoints = data.Breakpoints.load("tests/data/simple.bp")
+    breakpoints.encode()
+    print(breakpoints.labels)
+
+    # load the SNPs array from a PVAR file
+    snps = data.GenotypesPLINK("tests/data/simple.pgen")
+    snps.read_variants()
+    snps = snps.variants[["chrom", "pos"]]
+
+    # create array of per-site ancestry values
+    arr = breakpoints.population_array(variants=snps)
+    # reshape from n x p x 2 to n*2 x p
+    # so rows are haplotypes and columns are variants
+    arr = arr.transpose((0, 2, 1)).reshape(-1, arr.shape[1])
+
+    # write to haplotype ancestry file
+    np.savetxt(output, arr, fmt="%i", delimiter="")

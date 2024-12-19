@@ -23,7 +23,7 @@ HapBlock = [("pop", "U6"), ("chrom", "U10"), ("bp", np.uint32), ("cm", np.float6
 # This tuple lists the haplotype blocks in a sample, one set for each chromosome
 # Let's define a type alias, "SampleBlocks", for future use...
 SampleBlocks = NewType(
-    "SampleBlocks", "list[npt.NDArray[HapBlock], npt.NDArray[HapBlock]]]"
+    "SampleBlocks", "list[npt.NDArray[HapBlock], npt.NDArray[HapBlock]]]"  # type: ignore
 )
 
 
@@ -160,26 +160,31 @@ class Breakpoints(Data):
             yield samp, [np.array(b, dtype=HapBlock) for b in blocks]
         bps.close()
 
-    def encode(self) -> dict[int, str]:
+    def encode(self, labels: tuple[str] = None):
         """
         Replace each ancestral label in :py:attr:`~.Breakpoints.data` with an
         equivalent integer. Store a dictionary mapping these integers back to their
-        respective labels.
+        respective labels in :py:attr:`~.Breakpoints.labels`.
 
         This method modifies :py:attr:`~.Breakpoints.data` in place.
 
-        Returns
-        -------
-        dict[int, str]
-            A dictionary mapping each integer back to its ancestral label
+        Parameters
+        ----------
+        labels: tuple[str], optional
+            A list of population labels. The order of the labels in this list will be
+            kept in the respective labels.
         """
         if not (self.labels is None):
             raise ValueError("The data has already been encoded.")
         # save the order of the fields for later reordering
         names = [f[0] for f in HapBlock]
         # initialize labels dict and label counter
-        labels = {}
-        pop_count = 0
+        if labels is None:
+            labels = {}
+        else:
+            labels = {pop: i for i, pop in enumerate(labels)}
+        pop_count = len(labels)
+        seen = set()
         for sample, blocks in self.data.items():
             for strand_num in range(len(blocks)):
                 # initialize and fill the array of integers
@@ -189,10 +194,11 @@ class Breakpoints(Data):
                         labels[pop] = pop_count
                         pop_count += 1
                     ints[i] = labels[pop]
+                    seen.add(pop)
                 # replace the "pop" labels
                 arr = rcf.drop_fields(blocks[strand_num], ["pop"])
                 blocks[strand_num] = rcf.merge_arrays((arr, ints), flatten=True)[names]
-        self.labels = labels
+        self.labels = {k: v for k, v in labels.items() if k in seen}
 
     def recode(self):
         """
@@ -332,6 +338,7 @@ class Breakpoints(Data):
         --------
         To write to a file, you must first initialize a Breakpoints object and then
         fill out the names, data, and samples properties:
+
         >>> from haptools.data import Breakpoints, HapBlock
         >>> breakpoints = Breakpoints('simple.bp')
         >>> breakpoints.data = {

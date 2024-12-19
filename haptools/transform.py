@@ -593,6 +593,8 @@ def transform_haps(
             "that the IDs in your .hap file correspond with those you provided. "
             f"Here are the first few missing haplotypes: {diff[:first_few]}"
         )
+    if len(hp.data) == 0:
+        raise ValueError("Didn't load any haplotypes from the .hap file")
 
     log.info("Extracting variants from haplotypes")
     variants = {vr.id for id in hp.type_ids["H"] for vr in hp.data[id].variants}

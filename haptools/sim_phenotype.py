@@ -405,8 +405,12 @@ def simulate_pt(
         # check if these are all repeat IDs, haplotype IDs, or a mix of them
         if len(hp.type_ids["R"]) >= len(haplotype_ids) and repeats is None:
             # if they're all repeat IDs or --repeats was specified
-            log.info("Loading TR genotypes")
-            gt = GenotypesTR(fname=genotypes, log=log)
+            if genotypes.suffix == ".pgen":
+                log.info("Loading TR genotypes from PGEN file")
+                gt = GenotypesPLINKTR(fname=genotypes, log=log, chunk_size=chunk_size)
+            else:
+                log.info("Loading TR genotypes from VCF/BCF file")
+                gt = GenotypesTR(fname=genotypes, log=log)
             load_as_haps = False
         else:
             # the genotypes variable must contain haplotype genotypes

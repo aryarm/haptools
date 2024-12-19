@@ -345,6 +345,11 @@ class Haplotype:
     variants: tuple = field(default_factory=tuple, init=False)
     _extras: tuple = field(default=tuple(), init=False, repr=False)
 
+    def __len__(self):
+        if self.variants is not None:
+            return len(self.variants)
+        return 0
+
     @property
     def ID(self):
         """
@@ -456,7 +461,7 @@ class Haplotype:
         """
         return tuple(extra.name for extra in cls._extras)
 
-    def transform(self, genotypes: GenotypesVCF) -> npt.NDArray[bool]:
+    def transform(self, genotypes: GenotypesVCF) -> npt.NDArray:
         """
         Transform a genotypes matrix via the current haplotype
 
@@ -473,9 +478,9 @@ class Haplotype:
 
         Returns
         -------
-        npt.NDArray[bool]
-            A 2D matrix of shape (num_samples, 2) where each entry in the matrix
-            denotes the presence of the haplotype in one chromosome of a sample
+        npt.NDArray
+            A 2D matrix of shape (num_samples, 2) where each entry in the matrix is a
+            bool denoting the presence of the haplotype in one chromosome of a sample
         """
         var_IDs = self.varIDs
         # ensure the variants in the Genotypes object are ordered according to var_IDs
@@ -772,6 +777,11 @@ class Haplotypes(Data):
         # otherwise, the write() method might create unsorted files
         self.types = {"H": haplotype, "V": variant, "R": repeat}
         self.type_ids = None
+
+    def __len__(self):
+        if self.data is not None:
+            return len(self.data)
+        return 0
 
     @classmethod
     def load(
@@ -1188,12 +1198,16 @@ class Haplotypes(Data):
         indexed = True
         try:
             haps_file = TabixFile(str(self.fname))
+            if region is not None:
+                haps_file.fetch(region=region, multiple_iterators=True)
         except OSError:
             indexed = False
-        # if the user requested a specific region or subset of haplotypes and the file
+        except ValueError:
+            indexed = False
+        # If the user requested a specific region or subset of haplotypes and the file
         # is indexed, then we should handle it using tabix
         # else, we use a regular text opener - b/c there's no benefit to using tabix
-        if region or (haplotypes and indexed):
+        if (region or haplotypes) and indexed:
             haps_file = TabixFile(str(self.fname))
             metas, extras = self.check_header(list(haps_file.header))
             types = self._get_field_types(extras, metas.get("order"))
@@ -1222,8 +1236,8 @@ class Haplotypes(Data):
                         )
             haps_file.close()
         else:
-            # the file is not indexed, so we can't assume it's sorted, either
-            # use hook_compressed to automatically handle gz files
+            # The file is not indexed, so we can't assume it's sorted, either
+            # Use hook_compressed to automatically handle gz files
             with self.hook_compressed(self.fname, mode="r") as haps:
                 self.log.info("Not taking advantage of indexing.")
                 header_lines = []
@@ -1451,3 +1465,42 @@ class Haplotypes(Data):
         hps.index(force=True)
         if not inplace:
             return hps
+
+    @classmethod
+    def merge(cls, objs: tuple[Haplotypes], **kwargs) -> Haplotypes:
+        """
+        Merge Haplotypes objects with different sets of haplotypes together
+
+        .. note::
+            The input Haplotype instances are expected to have distinct indices and
+            must all be of the same type
+
+        Parameters
+        ----------
+        objs: tuple[Haplotypes]
+            The objects that should be merged together
+        **kwargs
+            Any parameters to pass to :py:meth:`~.Haplotypes._init__`
+
+        Raises
+        ------
+        ValueError
+            If the set of indices among the haplotypes is not distinct
+
+        Returns
+        -------
+        Haplotypes
+            A new object containing all of the Haplotypes from each input object
+        """
+        hps = cls(**kwargs)
+        hps.data = {}
+        for haps in objs:
+            for hap in haps.data.values():
+                if hap.id in hps.data:
+                    raise ValueError(
+                        "Failed to merge haplotype objects because their indices are "
+                        "not distinct"
+                    )
+                hps.data[hap.id] = hap
+        hps.index()
+        return hps

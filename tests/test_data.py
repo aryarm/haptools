@@ -189,6 +189,13 @@ class TestGenotypes:
         np.testing.assert_allclose(gts.data, expected)
         assert gts.samples == ("HG00096", "HG00097", "HG00099", "HG00100", "HG00101")
 
+        # what happens if we ask for a region with no variants?
+        gts = Genotypes(DATADIR / "simple.vcf.gz")
+        gts.read(region="1:10125-10140")
+        expected_empty = np.empty((0, 0, 0), dtype=np.uint8)
+        np.testing.assert_allclose(gts.data, expected_empty)
+        assert gts.samples == ("HG00096", "HG00097", "HG00099", "HG00100", "HG00101")
+
         # subset for just the samples we want
         expected = expected[[1, 3]]
 
@@ -570,6 +577,20 @@ class TestGenotypesPLINK:
         for i in range(len(new_gts.variants)):
             for col in ("chrom", "pos", "id", "alleles"):
                 assert gts.variants[col][i] == new_gts.variants[col][i]
+
+        # clean up afterwards: delete the files we created
+        fname.with_suffix(".psam").unlink()
+        fname.with_suffix(".pvar").unlink()
+        fname.unlink()
+
+    def test_write_genotypes_empty(self):
+        fname = DATADIR / "test_write.pgen"
+        gts = GenotypesPLINK(fname=fname)
+        gts.data = np.empty((0, 0, 0), dtype=np.uint8)
+        gts.samples = ()
+        gts.variants = np.empty(0, dtype=gts.variants.dtype)
+        gts.write()
+        gts.read()
 
         # clean up afterwards: delete the files we created
         fname.with_suffix(".psam").unlink()
@@ -1202,11 +1223,14 @@ class TestHaplotypes:
         # can we load this data from the hap file?
         haps = Haplotypes.load(DATADIR / "basic.hap")
         assert expected == haps.data
+        assert len(haps) == len(expected)
+        assert len(haps.data["chr21.q.3365*1"]) == 4
 
         # also check the indexed file
         # it should be the same
         haps = Haplotypes.load(DATADIR / "basic.hap.gz")
         assert expected == haps.data
+        assert len(haps) == len(expected)
 
     def test_load_no_header(self):
         expected = self._basic_haps()
@@ -1387,11 +1411,10 @@ class TestHaplotypes:
         assert expected == haps.data
 
     def test_subset(self):
-        expected = Haplotypes(DATADIR / "basic.hap")
+        expected = Haplotypes.load(DATADIR / "basic.hap")
         expected.read(haplotypes={"chr21.q.3365*1"})
 
-        haps = Haplotypes(DATADIR / "basic.hap")
-        haps.read()
+        haps = Haplotypes.load(DATADIR / "basic.hap")
         haps = haps.subset(haplotypes=("chr21.q.3365*1",))
 
         assert len(expected.data) == len(haps.data)
@@ -1724,6 +1747,20 @@ class TestHaplotypes:
 
         test_hap1.fname.unlink()
 
+    def test_merge(self):
+        haps1 = Haplotypes.load(DATADIR / "basic.hap")
+        haps2 = Haplotypes.load(DATADIR / "example.hap.gz")
+        # should raise value error because indices aren't distinct
+        with pytest.raises(ValueError) as info:
+            Haplotypes.merge((haps1, haps2), fname="new.hap")
+        haps2 = Haplotypes.load(DATADIR / "simple.hap")
+        haplotypes = Haplotypes.merge((haps1, haps2), fname="new.hap")
+        # now check that they got merged
+        haps1_vals = haps1.data.values()
+        haps2_vals = haps2.data.values()
+        for hp in haplotypes.data.values():
+            assert (hp in haps1_vals) or (hp in haps2_vals)
+
 
 class TestGenotypesVCF:
     def _get_fake_genotypes_refalt(self, with_phase=False):
@@ -1840,6 +1877,16 @@ class TestGenotypesVCF:
                 # index into col, i gets specific variant, x iterates thru
                 assert gts.variants[col][i] == x[col]
 
+        fname.unlink()
+
+    def test_write_empty(self):
+        fname = Path("test.vcf")
+        gts = GenotypesVCF(fname=fname)
+        gts.samples = ()
+        gts.variants = np.array([], dtype=gts.variants.dtype)
+        gts.data = np.empty((0, 0, 0), dtype=np.uint8)
+        gts.write()
+        gts.read()
         fname.unlink()
 
     def test_write_multiallelic(self):
@@ -2066,6 +2113,40 @@ class TestBreakpoints:
                 for obs, exp in zip(obs_strand["pop"], exp_strand["pop"]):
                     assert expected.labels[exp] == obs
 
+    def test_encode_reorder(self):
+        expected = self._get_expected_breakpoints()
+        expected.labels = {"CEU": 0, "YRI": 1}
+
+        observed = self._get_expected_breakpoints()
+        observed.encode(labels=("CEU", "YRI", "AMR"))
+
+        assert observed.labels == expected.labels
+        assert len(expected.data) == len(observed.data)
+        for sample in expected.data:
+            for strand in range(len(expected.data[sample])):
+                exp_strand = expected.data[sample][strand]
+                obs_strand = observed.data[sample][strand]
+                assert len(exp_strand) == len(observed.data[sample][strand])
+                for obs, exp in zip(obs_strand["pop"], exp_strand["pop"]):
+                    assert expected.labels[exp] == obs
+
+        # now try again with AMR in the middle
+        # In that case, it should keep the ordering when deciding the integers
+        # but the final labels should include the AMR key
+        expected.labels = {"CEU": 0, "YRI": 2}
+        observed = self._get_expected_breakpoints()
+        observed.encode(labels=("CEU", "AMR", "YRI"))
+
+        assert observed.labels == expected.labels
+        assert len(expected.data) == len(observed.data)
+        for sample in expected.data:
+            for strand in range(len(expected.data[sample])):
+                exp_strand = expected.data[sample][strand]
+                obs_strand = observed.data[sample][strand]
+                assert len(exp_strand) == len(observed.data[sample][strand])
+                for obs, exp in zip(obs_strand["pop"], exp_strand["pop"]):
+                    assert expected.labels[exp] == obs
+
     def test_recode(self):
         expected = self._get_expected_breakpoints()
 
@@ -2212,3 +2293,31 @@ class TestDocExamples:
             with open(DATADIR / "apoe.hap") as expected:
                 assert hp_file.read() == expected.read()
         hp.fname.unlink()
+
+    def test_bp2anc(self):
+        output = Path("output.hanc")
+
+        # load breakpoints from the bp file and encode each population label as an int
+        breakpoints = Breakpoints.load(DATADIR / "simple.bp")
+        breakpoints.encode()
+        # print(breakpoints.labels)
+
+        # load the SNPs array from a PVAR file
+        snps = GenotypesPLINK(DATADIR / "simple.pgen")
+        snps.read_variants()
+        snps = snps.variants[["chrom", "pos"]]
+
+        # create array of per-site ancestry values
+        arr = breakpoints.population_array(variants=snps)
+        # reshape from n x p x 2 to n*2 x p
+        # so rows are haplotypes and columns are variants
+        arr = arr.transpose((0, 2, 1)).reshape(-1, arr.shape[1])
+
+        # write to haplotype ancestry file
+        np.savetxt(output, arr, fmt="%i", delimiter="")
+
+        # validate the output and clean up afterwards
+        with open(output) as anc_file:
+            with open(DATADIR / "simple.hanc") as expected:
+                assert anc_file.read() == expected.read()
+        output.unlink()

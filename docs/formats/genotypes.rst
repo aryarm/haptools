@@ -37,3 +37,14 @@ To convert a VCF containing tandem repeats to PGEN, use this command, instead.
 .. code-block:: bash
 
 	plink2 --vcf-half-call m --make-pgen 'pvar-cols=vcfheader,qual,filter,info' --vcf input.vcf --make-pgen --out output
+
+Tandem repeats
+~~~~~~~~~~~~~~
+VCFs containing tandem repeats usually have a *type* indicating the tool from which they originated. We support whichever types are supported by `TRTools <https://trtools.readthedocs.io/en/stable/CALLERS.html>`_.
+
+We do our best to infer the *type* of a TR VCF automatically. However, there will be some instances when it cannot be inferred.
+Users of TRTools know to specify :code:`--vcftype` in that situation. However, most haptools commands do not yet support the :code:`--vcftype` parameter. Instead, you can modify the header of your VCF to trick haptools into being able to infer the *type*.
+
+For example, if you're using HipSTR, you can add :code:`##command=hipstr...`. Refer to `this code in TRTools <https://trtools.readthedocs.io/en/stable/trtools.utils.tr_harmonizer.html#trtools.utils.tr_harmonizer.InferVCFType>`_ for more details.
+
+Please note that all of this also applies to PVAR files created from TR VCFs.

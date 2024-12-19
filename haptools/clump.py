@@ -6,7 +6,7 @@ from logging import Logger, getLogger
 
 import numpy as np
 
-from .data import Genotypes, GenotypesVCF, GenotypesTR, GenotypesPLINKTR
+from .data import Genotypes, GenotypesVCF, GenotypesPLINK, GenotypesTR, GenotypesPLINKTR
 
 
 class Variant:

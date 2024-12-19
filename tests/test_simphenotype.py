@@ -670,6 +670,17 @@ class TestSimPhenotypeCLI:
         assert captured.out
         assert result.exit_code == 0
 
+    def test_repeat_pgen(self, capfd):
+        gt_file = DATADIR / "simple-tr.pgen"
+        hp_file = DATADIR / "simple_tr.hap"
+
+        cmd = f"simphenotype --id 1:10114:GTT {gt_file} {hp_file}"
+        runner = CliRunner()
+        result = runner.invoke(main, cmd.split(" "), catch_exceptions=False)
+        captured = capfd.readouterr()
+        assert captured.out
+        assert result.exit_code == 0
+
     def test_repeat_with_hapgts(self, capfd):
         tmp_transform = Path("temp-transform.vcf")
         with open(tmp_transform, "w") as file:
@@ -677,9 +688,10 @@ class TestSimPhenotypeCLI:
         gt_file = DATADIR / "simple_tr.vcf"
         hp_file = DATADIR / "simple_tr.hap"
 
+        # simulate from a mix of one haplotype and one repeat
         cmd = (
             f"simphenotype --repeats {gt_file} --id 1:10114:GTT "
-            f"{tmp_transform} {hp_file}"
+            f"--id H1 {tmp_transform} {hp_file}"
         )
         runner = CliRunner()
         result = runner.invoke(main, cmd.split(" "), catch_exceptions=False)

@@ -1,11 +1,71 @@
+import math
 from pathlib import Path
 
+import numpy as np
 from click.testing import CliRunner
 
 from haptools.data import Data
 from haptools.__main__ import main
+from haptools.ld import pearson_corr_ld
 
 DATADIR = Path(__file__).parent.joinpath("data")
+
+
+def test_ld(seed=42):
+    rng = np.random.default_rng(seed)
+
+    # Different input shapes will give different output shapes
+    # (25,) x (25,) --> float
+    arrA = rng.choice((0, 1, 2), size=(25,))
+    arrB = rng.choice((0, 1, 2), size=(25,))
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, float)
+    assert math.isclose(ld, -0.1148198316929615)
+
+    # (25,) x (25,1) --> (1,)
+    arrB = arrB[:, np.newaxis]
+    old_ld = ld
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (1,)
+    assert old_ld == ld[0]
+
+    # (25,1) x (25,1) --> (1,1)
+    arrA = arrA[:, np.newaxis]
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (1, 1)
+    assert old_ld == ld[0, 0]
+
+    # (25,3) x (25,) --> (3,)
+    arrA = np.hstack((np.random.choice((0, 1, 2), size=(25, 2)), arrA))
+    arrB = np.squeeze(arrB)
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (3,)
+    assert old_ld == ld[2]
+
+    # (25,) x (25,3) --> (3,)
+    arrA = arrB
+    arrB = np.random.choice((0, 1, 2), size=(25, 3))
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (3,)
+
+    # (25,1) x (25,3) --> (1,3)
+    arrA = arrA[:, np.newaxis]
+    old_ld = ld
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (1, 3)
+    np.testing.assert_allclose(old_ld[np.newaxis, :], ld)
+
+    # (25,2) x (25,3) --> (2,3)
+    arrA = np.hstack((arrA, np.random.choice((0, 1, 2), size=(25, 1))))
+    ld = pearson_corr_ld(arrA, arrB)
+    assert isinstance(ld, np.ndarray)
+    assert ld.shape == (2, 3)
+    np.testing.assert_allclose(old_ld, ld[0])
 
 
 def test_basic(capfd):
