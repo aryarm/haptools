@@ -444,18 +444,30 @@ class TestGenotypesPLINK:
                 assert gts.variants[col][i] == expected.variants[col][i]
 
     def test_load_genotypes_chunked_cpus(self):
-        gts = GenotypesPLINK(DATADIR / "example.pgen", num_cpus=1)
-        gts.read()
-        # TODO: test with missing values
-        # and with different combinations of num_cpus and chunk_size
-        breakpoint()
+        fname = DATADIR / "example.pgen"
+        # get the expected data and the available number of CPUs and variants
+        exp = GenotypesVCF(fname.with_suffix(".vcf.gz"))
+        exp.read(max_variants=20)
+        gts = GenotypesPLINK(fname)
+        avail_num_cpus = gts.num_cpus
+        num_variants = len(exp.variants)
 
-        # check that everything matches what we expected
-        np.testing.assert_allclose(gts.data, expected.data)
-        assert gts.samples == expected.samples
-        for i, x in enumerate(expected.variants):
-            for col in ("chrom", "pos", "id", "alleles"):
-                assert gts.variants[col][i] == expected.variants[col][i]
+        # what is the ratio of num variants to available CPUs?
+        ratio = int(num_variants/avail_num_cpus)
+
+        # test with different combinations of num_cpus and chunk_size
+        for num_cpus in set((1, int(avail_num_cpus/2), avail_num_cpus)):
+            for chunk_size in set((1, ratio - 2, ratio - 1, ratio, ratio + 1, ratio + 2, num_variants)):
+                gts = GenotypesPLINK(fname, chunk_size=chunk_size, num_cpus=num_cpus)
+                gts.read()
+                # check that everything matches what we expected
+                np.testing.assert_allclose(gts.data, exp.data)
+                assert gts.samples == exp.samples
+                for i, x in enumerate(exp.variants):
+                    for col in ("chrom", "pos", "id", "alleles"):
+                        assert gts.variants[col][i] == exp.variants[col][i]
+
+        # TODO: test with missing values
 
     def test_load_genotypes_prephased(self):
         expected = self._get_fake_genotypes_plink()
