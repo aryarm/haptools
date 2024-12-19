@@ -1035,6 +1035,8 @@ class GenotypesPLINK(GenotypesVCF):
         super().__init__(fname, log)
         self.chunk_size = chunk_size
         self.num_cpus = num_cpus or len(os.sched_getaffinity(os.getpid()))
+        if self.num_cpus < 1:
+            self.num_cpus = 1
 
     def read_samples(self, samples: set[str] = None):
         """
@@ -1437,7 +1439,9 @@ class GenotypesPLINK(GenotypesVCF):
         # initialize the data array
         if self.num_cpus > 1:
             shared_arr = mp.Array("B", int(np.prod(mat_len)))
-            self.data = np.frombuffer(shared_arr.get_obj(), dtype=np.uint8).reshape(mat_len)
+            self.data = np.frombuffer(shared_arr.get_obj(), dtype=np.uint8).reshape(
+                mat_len
+            )
         # how many variants should we load at once?
         chunks = self.chunk_size
         if chunks is None or chunks > mat_len[1]:
@@ -1450,8 +1454,8 @@ class GenotypesPLINK(GenotypesVCF):
             return
         # otherwise, let's parallelize!
         # adjust chunk size to maximize CPU usage
-        if np.ceil(mat_len[1]/chunks) < self.num_cpus:
-            chunks = int(np.ceil(mat_len[1]/self.num_cpus))
+        if np.ceil(mat_len[1] / chunks) < self.num_cpus:
+            chunks = int(np.ceil(mat_len[1] / self.num_cpus))
             self.log.info(
                 f"Changing chunk size to maximize usage of {self.num_cpus} CPUs"
             )
@@ -1461,16 +1465,17 @@ class GenotypesPLINK(GenotypesVCF):
         )
         # if the chunk size doesn't perfectly divide the variants, at what point should
         # we decrease the chunk size by 1?
-        chunk_thresh = chunks*(mat_len[1] % self.num_cpus)
+        chunk_thresh = chunks * (mat_len[1] % self.num_cpus)
         chunk_starts = range(0, chunk_thresh, chunks)
         if chunks - 1 > 0:
-            chunk_starts = chain(chunk_starts, range(chunk_thresh, mat_len[1], chunks-1))
+            chunk_starts = chain(
+                chunk_starts, range(chunk_thresh, mat_len[1], chunks - 1)
+            )
         # iterate through chunks of variants
         chunks_args = [
-            (start, min(start + chunks, mat_len[1]))
-            for start in chunk_starts
+            (start, min(start + chunks, mat_len[1])) for start in chunk_starts
         ]
-        mp_chunksize = int(np.ceil(len(chunks_args)/self.num_cpus))
+        mp_chunksize = int(np.ceil(len(chunks_args) / self.num_cpus))
         with mp.Pool(
             processes=self.num_cpus,
             initializer=self._init_mp,

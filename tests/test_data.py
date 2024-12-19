@@ -450,15 +450,19 @@ class TestGenotypesPLINK:
         exp.read(max_variants=20)
         gts = GenotypesPLINK(fname)
         avail_num_cpus = gts.num_cpus
+        gts.log.debug(f"Discovered {avail_num_cpus} available CPUs")
         num_variants = len(exp.variants)
 
         # what is the ratio of num variants to available CPUs?
-        ratio = int(num_variants/avail_num_cpus)
+        ratio = int(num_variants / avail_num_cpus)
 
         # test with different combinations of num_cpus and chunk_size
-        for num_cpus in set((1, int(avail_num_cpus/2), avail_num_cpus)):
-            for chunk_size in set((1, ratio - 2, ratio - 1, ratio, ratio + 1, ratio + 2, num_variants)):
-                gts = GenotypesPLINK(fname, chunk_size=chunk_size, num_cpus=num_cpus)
+        for num_cpu in set((1, int(avail_num_cpus / 2), avail_num_cpus)):
+            for chunk_size in set(
+                (1, ratio - 2, ratio - 1, ratio, ratio + 1, ratio + 2, num_variants)
+            ):
+                gts = GenotypesPLINK(fname, chunk_size=chunk_size, num_cpus=num_cpu)
+                gts.log.debug(f"Testing num_cpus: {num_cpu}, chunk_size: {chunk_size}")
                 gts.read()
                 # check that everything matches what we expected
                 np.testing.assert_allclose(gts.data, exp.data)
