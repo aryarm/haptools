@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/CAST-genomics/haptools/compare/v0.5.0...v0.6.0) (2025-01-03)
+
+
+### Features
+
+* add `--chunk-size` parameter to `simgenotype` and fix RuntimeError when reference coordinates extend past the final map file coordinate ([#268](https://github.com/CAST-genomics/haptools/issues/268)) ([4c22846](https://github.com/CAST-genomics/haptools/commit/4c22846a82101f27ab7646f58c6cdaaccff882fe))
+
 ## [0.5.0](https://github.com/CAST-genomics/haptools/compare/v0.4.2...v0.5.0) (2024-12-11)
 
 

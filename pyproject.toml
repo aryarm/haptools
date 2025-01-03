@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "haptools"
-version = "0.5.0"
+version = "0.6.0"
 description = "Ancestry and haplotype aware simulation of genotypes and phenotypes for complex trait analysis"
 authors = ["Arya Massarat", "Michael Lamkin"]
 license = "MIT"
