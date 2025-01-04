@@ -1543,14 +1543,39 @@ class GenotypesPLINK(GenotypesVCF):
         allele_cts[allele_cts < 2] = 2
         return allele_cts
 
-    def write(self):
+    def write(self, dosages: npt.NDArray = None):
         """
         Write the variants in this class to PLINK2 files at
         :py:attr:`~.GenotypesPLINK.fname`
+
+        Parameters
+        ----------
+        dosages : npt.NDArray[np.float32|np.float64]
+            A matrix of dosages of shape (num_variants, num_samples) and float dtype
         """
         # write the psam and pvar files
         self.write_samples()
         self.write_variants()
+        if dosages is not None:
+            self.log.info("Writing dosages instead of genotypes")
+            if (dosages.shape[0] != self.data.shape[1]) and (
+                dosages.shape[1] != self.data.shape[0]
+            ):
+                raise ValueError(
+                    "Dosage array must be of shape num_variants x num_samples"
+                )
+            pv = pgenlib.PvarReader(bytes(str(self.fname.with_suffix(".pvar")), "utf8"))
+            with pgenlib.PgenWriter(
+                filename=bytes(str(self.fname), "utf8"),
+                sample_ct=len(self.samples),
+                variant_ct=len(self.variants),
+                allele_ct_limit=pv.get_max_allele_ct(),
+                nonref_flags=False,
+                hardcall_phase_present=True,
+                dosage_present=True,
+            ) as pgen:
+                pgen.append_dosages_batch(dosages)
+            return
         self.log.debug(f"Transposing genotype matrix of size {self.data.shape}")
         # transpose the data b/c pgenwriter expects things in "variant-major" order
         # (ie where variants are rows instead of samples)
@@ -1829,7 +1854,7 @@ class GenotypesPLINKTR(GenotypesPLINK):
             variant.data[:, :2][missing] = np.iinfo(np.uint8).max
             yield variant
 
-    def write(self):
+    def write(self, dosages: npt.NDArray = None):
         raise NotImplementedError
 
     def write_variants(self):

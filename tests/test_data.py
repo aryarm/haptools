@@ -658,6 +658,35 @@ class TestGenotypesPLINK:
         fname.with_suffix(".pvar").unlink()
         fname.unlink()
 
+    def test_write_genotypes_biallelic_dosage(self):
+        gts = self._get_fake_genotypes_plink()
+
+        # convert to bool - we should be able to handle both
+        gts.data = gts.data.astype(np.bool_)
+
+        fname = DATADIR / "test_write.pgen"
+        gts.fname = fname
+        fake_dosages = gts.data[:, :, :2].sum(axis=2)
+        gts.write(dosages=fake_dosages.T.copy().astype(np.float32))
+
+        new_gts = GenotypesPLINK(fname)
+        new_gts.read()
+
+        # check that everything matches what we expected
+        np.testing.assert_allclose(
+            gts.data[:, :, :2].sum(axis=2),
+            new_gts.data[:, :, :2].sum(axis=2),
+        )
+        assert gts.samples == new_gts.samples
+        for i in range(len(new_gts.variants)):
+            for col in ("chrom", "pos", "id", "alleles"):
+                assert gts.variants[col][i] == new_gts.variants[col][i]
+
+        # clean up afterwards: delete the files we created
+        fname.with_suffix(".psam").unlink()
+        fname.with_suffix(".pvar").unlink()
+        fname.unlink()
+
     def test_write_multiallelic(self):
         # Create fake multi-allelic genotype data to write to the PLINK file
         gts_multiallelic = self._get_fake_genotypes_multiallelic()
