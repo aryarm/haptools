@@ -1,0 +1,21 @@
+#	version	0.2.0
+#H extra4 s
+#H extra1 s
+#H extra2 s
+#H extra3 s
+#H extra0 d
+#H extra5 s
+#H extra6 s
+#H extra9 d
+#H extra8 s
+#H extra7 s
+# orderH extra0 extra1 extra2 extra3 extra4 extra5 extra6 extra7 extra8 extra9
+H	1	10114	10118	H1 0 b c d e f g h i 9
+H	1	10114	10119	H2 0 b c d e f g h i 9
+H	1	10116	10119	H3 0 b c d e f g h i 9
+V	H1	10114	10115	1:10114:T:C	T 
+V	H1	10116	10117	1:10116:A:G	G
+V	H2	10114	10115	1:10114:T:C	C
+V	H2	10117	10118	1:10117:C:A	C
+V	H3	10116	10117	1:10116:A:G	A
+V	H3	10117	10118	1:10117:C:A	A

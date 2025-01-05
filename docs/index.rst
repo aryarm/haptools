@@ -20,6 +20,8 @@ Commands
 
 * :doc:`haptools transform </commands/transform>`: Transform a set of genotypes via a list of haplotypes. Create a new VCF containing haplotypes instead of variants.
 
+* :doc:`haptools validate </commands/validate>`: Validate the formatting of a haplotype file.
+
 * :doc:`haptools index </commands/index>`: Sort, compress, and index our custom file format for haplotypes.
 
 * :doc:`haptools clump </commands/clump>`: Convert variants in LD with one another into clumps.
@@ -95,6 +97,7 @@ There is an option to *Cite this repository* on the right sidebar of `the reposi
    commands/simphenotype.rst
    commands/karyogram.rst
    commands/transform.rst
+   commands/validate.rst
    commands/index.rst
    commands/clump.rst
    commands/ld.rst

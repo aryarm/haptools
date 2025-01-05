@@ -1,0 +1,4 @@
+#	version	0.2.0
+#H extraField d
+H	1	10114	10118	H1 NOT_AN_INTEGER
+V	H1	10116	10117	1:10116:A:G	G

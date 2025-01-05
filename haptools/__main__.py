@@ -1038,6 +1038,61 @@ def clump(
     )
 
 
+@main.command(short_help="Validate the structure of a .hap file")
+@click.argument("filename", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--sorted/--not-sorted",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Has the file been sorted already?",
+)
+@click.option(
+    "--genotypes",
+    type=click.Path(path_type=Path),
+    default=None,
+    show_default="optional .pvar file to compare against",
+    help=(
+        "A .pvar file containing variant IDs in order to compare them to the .hap file"
+    ),
+)
+@click.option(
+    "-v",
+    "--verbosity",
+    type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"]),
+    default="INFO",
+    show_default=True,
+    help="The level of verbosity desired",
+)
+def validate(
+    filename: Path,
+    sorted: bool = False,
+    genotypes: Path | None = None,
+    verbosity: str = "INFO",
+):
+    """
+    Validate the formatting of a .hap file
+
+    Output warnings/errors explaining how the formatting of your .hap file may
+    be improved.
+    """
+    from .logging import getLogger
+    from .validate import is_hapfile_valid
+
+    log = getLogger(name="validate", level=verbosity)
+
+    # if the hap file is compressed and a .tbi index exists for it, assume it is sorted
+    if filename.suffix == ".gz" and filename.with_suffix(".gz.tbi").exists():
+        sorted = True
+
+    is_valid = is_hapfile_valid(filename, sorted=sorted, log=log, pvar=genotypes)
+
+    if not is_valid:
+        raise click.ClickException(
+            "Found several warnings and / or errors in the .hap file"
+        )
+
+
 if __name__ == "__main__":
     # run the CLI if someone tries 'python -m haptools' on the command line
     main(prog_name="haptools")

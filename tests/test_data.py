@@ -1173,7 +1173,7 @@ class TestHaplotypes:
     def _get_dummy_haps(self):
         # create three haplotypes
         haplotypes = {
-            "H1": Haplotype(chrom="1", start=10114, end=8, id="H1"),
+            "H1": Haplotype(chrom="1", start=10114, end=10118, id="H1"),
             "H2": Haplotype(chrom="1", start=10114, end=10119, id="H2"),
             "H3": Haplotype(chrom="1", start=10116, end=10119, id="H3"),
         }

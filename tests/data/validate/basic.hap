@@ -1,0 +1,6 @@
+#	version	0.2.0
+H	21	100	110	haplotype_1
+H	21	110	125	haplotype_2
+V	haplotype_1	100	101	variant_1	C
+V	haplotype_2	110	111	variant_2	A
+

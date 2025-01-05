@@ -1,0 +1,6 @@
+#	version	0.2.0
+#H extraField1 d
+#H extraField2 d
+#   orderH extraField1
+H	1	10114	10118	H1 NOT_AN_INTEGER
+V	H1	10116	10117	1:10116:A:G	G

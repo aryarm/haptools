@@ -1,0 +1,11 @@
+#	version	0.2.0
+#H a d
+#H b d
+#H c d
+#   orderH a b c
+#   orderH c b a
+H	21	100	110	haplotype_1 1 2 3
+H	21	110	125	haplotype_2 3 2 1
+V	haplotype_1	100	101	variant_1	C
+V	haplotype_2	110	111	variant_2	A
+

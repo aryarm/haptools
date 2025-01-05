@@ -1,0 +1,4 @@
+##filedate=20230724
+##contig=<ID=1>
+#CHROM	POS	ID	REF	ALT
+21	100	variant_1	G	C
